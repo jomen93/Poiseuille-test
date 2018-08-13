@@ -1,23 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define Nx 128 // Numero de cuadro en la direccion x
-#define Ny 128 // Numero de cuadro en la direccion y
-#define Nz 5 // Numero de cuadro en la direccion y
+#define Nx 128 
+#define Ny 128 
+#define Nz 10 
 #define Nx1 (Nx+1)
 #define Ny1 (Ny+1)
 #define Nz1 (Nz+1)
 #define L (Ny+1)
-#define Q 19 		// Numero de velocidades discretas
-#define rho0 1.0  // Densidad Inicial
-#define ux0 0.0 // Velocidad inicial en la componente x
-#define uy0 0.0   // Velocidad inicial en la componente y 
-#define uz0 0.0   // Velocidad inicial en la componente y 
-#define g 0.000001 // verificar para conservar compresibilidad !!!
+#define Q 19 		
+#define rho0 1.0  
+#define ux0 0.0 
+#define uy0 0.0   
+#define uz0 0.0   
+#define g 0.000001 
 #define dt 1
 
-//int cx[Q]={0, 1, 0, -1, 0, 1, -1, -1, 1};
-//int cy[Q]={0, 0, 1, 0, -1, 1, 1, -1, -1};
+
 
 int cx[Q] = {0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 0, 0, 1,-1, 1,-1, 0, 0};
 int cy[Q] = {0, 0, 0, 1,-1, 0, 0, 1,-1, 1, 0, 1,-1,-1, 1, 0, 0, 1,-1};
@@ -29,11 +28,10 @@ int cz[Q] = {0, 0, 0, 0, 0, 1,-1, 0, 0, 1,-1, 1,-1, 1, 0,-1, 1,-1, 1};
 bool EsFrontera[Nx1][Ny1][Nz1];
 bool EsFronteraPeriodica[Nx1][Ny1][Nz1];
 double Fx, Fy, Fz;
-double f[Nx1][Ny1][Nz1][Q]; //Arreglo de las funciones de distribucion
-double f_post[Nx1][Ny1][Nz1][Q]; // Arreglo de las funciones de distribucion luego de la colision
+double f[Nx1][Ny1][Nz1][Q]; 
+double f_post[Nx1][Ny1][Nz1][Q]; 
 double rho[Nx1][Ny1][Nz1], ux[Nx1][Ny1][Nz1], uy[Nx1][Ny1][Nz1],uz[Nx1][Ny1][Nz1];
-// Arreglo de la densidad, velocidad en x e y 
-double tau; // Tiempo de relajacion en el modelo BGK
+double tau; 
 double w[Q] = {1.0/3 ,1.0/18,1.0/18,1.0/18,1.0/18,1.0/18,
 			   1.0/18,1.0/36,1.0/36,1.0/36,1.0/36,1.0/36,
 			   1.0/36,1.0/36,1.0/36,1.0/36,1.0/36,1.0/36,1.0/36};
@@ -41,45 +39,41 @@ double w[Q] = {1.0/3 ,1.0/18,1.0/18,1.0/18,1.0/18,1.0/18,
   			//   6      7       8        9     10      11      
 			//   12     13     14       15     16      17  	18 
 
-//double w[Q]={4.0/9 ,1.0/9 ,1.0/9 ,1.0/9 ,1.0/9 ,1.0/36 ,1.0/36,
-//1.0/36,1.0/36}; // Pesos 
-//int rc[Q]={0,3,4,1,2,7,8,5,6}; // index of reversed velocity
-void Init_Eq(void); //Funcion de Initializacion
+
+void Init_Eq(void);
 double feq(double RHO, double U, double V, double W,int q);
-// Funcionde distribucion de equilibrio 
-void Coll_BGK(void); // BGK colision
-void Streaming(void); // Streaming (Transmision)
-void Den_Vel(void); // Variables macroscopicas
+void Coll_BGK(void);
+void Streaming(void); 
+void Den_Vel(void); 
 void BBOS(void);
-void BBOS2(void);
-double u0[Nx1][Ny1][Nz1],v0[Nx1][Ny1][Nz1],w0[Nx1][Ny1][Nz1]; // definicion de matrices de condiciones iniciales
-void Data_Output(void); // Funcion que escribe los datos
-double Fi(double RHO, double U, double V, double W,int q); // funcion para agregar el forzamiento 
-//=========================================================
-//=========================================================
+double u0[Nx1][Ny1][Nz1],v0[Nx1][Ny1][Nz1],w0[Nx1][Ny1][Nz1];
+void Data_Output(void);
+double Fi(double RHO, double U, double V, double W,int q);
+
+
+
 int main()
 {
 	int n,M2,N2,O2;
 
 	M2=Nx/2; N2=Ny/2; O2 = Nz/2;
 	n=0;
-	tau=5;// Tiempo de relajacion para BGK
+	tau=0.9;
 	Init_Eq();
 	while(n <=100)
 	{
 		n++;
-		Coll_BGK(); //BGK colision
-		Streaming(); // Streaming (Transmision)
-		//BBOS();
-		BBOS2();
-		Den_Vel(); // Variables macroscopicas de fluido 
+		Coll_BGK(); 
+		Streaming(); 
+		BBOS();
+		Den_Vel(); 
 		printf("rho=%e ux_c=%e uy_c=%e uz_c=%e k=%d\n",rho[M2][N2][O2],ux[M2][N2][O2],uy[M2][N2][O2],uz[M2][N2][O2], n); 	
 	}
-	Data_Output(); //Escribir los pasos cuando acabe la iteracion
+	Data_Output(); 
 }
 
 
-// Funcion que inicializa las matrices
+
 void Init_Eq()
 {
 	int j, i, k, q;
@@ -99,19 +93,15 @@ void Init_Eq()
 		for(q=0;q<Q;q++)
 		f[i][j][k][q]=feq(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q);
 	}
-
 }
-
-
-// Calculo de la distribucion de equilibrio 
+ 
 double feq(double RHO, double U, double V, double W,int q)
 {
 	double cu, U2;
-	cu=cx[q]*U+cy[q]*V+cz[q]*W; // c k*u
-	U2=U*U+V*V+W*W; // u*u; norma al cuadrado
+	cu=cx[q]*U+cy[q]*V+cz[q]*W; 
+	U2=U*U+V*V+W*W; 
 	return w[q]*RHO*(1.0+3.0*cu+4.5*cu*cu-1.5*U2);
 }
-
 double Si(double RHO, double U, double V, double W,int q)
 {
 	double Fx = 0.0, Fy = -RHO*g, Fz = 0.0;
@@ -122,29 +112,22 @@ double Si(double RHO, double U, double V, double W,int q)
 	double t3 = U*Fx + V*Fy + W*Fz;
 	return (1-((dt)/(2*tau)))*w[q]*(3.0*t1+ 9.0*t2- 3.0*t3);	
 
-	//double Fx = 0, Fy = -RHO*g;
-	//double t1 = cx[q]*Fx + cy[q]*Fy;
-	//double t2 = cx[q]*cx[q]*U*Fx +cx[q]*cy[q]*(V*Fx+U*Fy)+cy[q]*cy[q]*V*Fy;
-	//double t3 = U*Fx + V*Fy;
-	//return (1-((dt)/(2*tau)))*w[q]*(3.0*t1+ 9.0*t2- 3.0*t3);
+
+
 }
-
-
-// Funcion que hace la colision BGK
 void Coll_BGK()
 {
 	int j, i, k, q;
 	double FEQ;
 	for (i=0;i<=Nx1;i++) for(j=0;j<=Ny1;j++) for(k=0;k<=Nz1;k++) for(q=0;q<Q;q++)
 	{
-		FEQ=feq(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q); // EDF
-		f_post[i][j][k][q] = (1 - (dt/tau))*f[i][j][k][q] + (dt/tau)*FEQ 
-		+dt*Si(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q) ;// Post-collision funciones de distribucion
+		FEQ=feq(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q); 
+		f_post[i][j][k][q] = (1 - (dt/tau))*f[i][j][k][q] + (dt/tau)*FEQ
+		+dt*Si(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q);
 	}
 }
 
 
-// Streaming (Transmision de la informacion)
 
 void Streaming()
 {
@@ -157,12 +140,29 @@ void Streaming()
 	}
 }
 
-
-//Bounce Back
 void BBOS(){
 	int i,j,k;
 	for (i=0;i<=Nx;i++) for(j=0;j<=Ny;j++) for(k=0;k<=Nz;k++){ 
 		if(EsFrontera[i][j][k]==true){
+			f[i][j][k][1]=f_post[i][j][k][2];
+			f[i][j][k][2]=f_post[i][j][k][1];
+			f[i][j][k][3]=f_post[i][j][k][4];
+			f[i][j][k][4]=f_post[i][j][k][3];
+			f[i][j][k][5]=f_post[i][j][k][6];
+			f[i][j][k][6]=f_post[i][j][k][5];
+			f[i][j][k][7]=f_post[i][j][k][8];
+			f[i][j][k][8]=f_post[i][j][k][7];
+			f[i][j][k][9]=f_post[i][j][k][10];
+			f[i][j][k][10]=f_post[i][j][k][9];
+			f[i][j][k][11]=f_post[i][j][k][12];
+			f[i][j][k][12]=f_post[i][j][k][11];
+			f[i][j][k][13]=f_post[i][j][k][14];
+			f[i][j][k][14]=f_post[i][j][k][13];
+			f[i][j][k][15]=f_post[i][j][k][16];
+			f[i][j][k][16]=f_post[i][j][k][15];
+			f[i][j][k][17]=f_post[i][j][k][18];
+			f[i][j][k][18]=f_post[i][j][k][17];
+			/*
 			//plano derecho
 			f[i][j][k][1]=f_post[i][j][k][2];
 			f[i][j][k][7]=f_post[i][j][k][8];
@@ -183,108 +183,38 @@ void BBOS(){
 			f[i][j][k][12]=f_post[i][j][k][11];
 			f[i][j][k][15]=f_post[i][j][k][16];
 			f[i][j][k][17]=f_post[i][j][k][18];
-
+			
 			//plano adelante
 			f[i][j][k][5]=f_post[i][j][k][6];
 			f[i][j][k][9]=f_post[i][j][k][10];
 			f[i][j][k][11]=f_post[i][j][k][12];
 			f[i][j][k][16]=f_post[i][j][k][15];
 			f[i][j][k][18]=f_post[i][j][k][17];
-
-		if(EsFrontera[i][j][k] == true)
+			*/
+			
+		
+		//if(EsFronteraPeriodica[i][j][k] == true && j == 0)
 			//plano abajo
 
-			f[0][i][k][3]=f_post[Ny-int(cy[3]*dt)][i-int(cx[3]*dt)][k-int(cz[3]*dt)][3];
-			f[0][i][k][7]=f_post[Ny-int(cy[7]*dt)][i-int(cx[7]*dt)][k-int(cz[7]*dt)][7];
-			f[0][i][k][11]=f_post[Ny-int(cy[11]*dt)][i-int(cx[11]*dt)][k-int(cz[11]*dt)][11];
-			f[0][i][k][14]=f_post[Ny-int(cy[14]*dt)][i-int(cx[14]*dt)][k-int(cz[14]*dt)][14];
-			f[0][i][k][17]=f_post[Ny-int(cy[17]*dt)][i-int(cx[17]*dt)][k-int(cz[17]*dt)][17];
+			//f[i][j][k][3]=f_post[i-cx[3]*dt][i-j+Ny-cy[3]*dt][k-k-cz[3]*dt][3];
+			//f[i][j][k][7]=f_post[i-cx[7]*dt][i-Ny-cy[7]*dt][k-k-cz[7]*dt][7];
+			//f[i][j][k][11]=f_post[i-cx[11]*dt][i-Ny-cy[11]*dt][k-k-cz[11]*dt][11];
+			//f[i][j][k][14]=f_post[i-cx[14]*dt][i-Ny-cy[14]*dt][k-k-cz[14]*dt][14];
+			//f[i][j][k][17]=f_post[i-cx[17]*dt][i-Ny-cy[17]*dt][k-k-cz[17]*dt][17];
 
 			//plano arriba
 
-			f[i][Ny][k][4]=f_post[i-int(cx[4]*dt)][0-int(cy[4]*dt)][k-int(cz[4]*dt)][4];
+			//f[i][Ny][k][4]=f_post[i-int(cx[4]*dt)][0-int(cy[4]*dt)][k-int(cz[4]*dt)][4];
 			//f[i][Ny][k][8]=f_post[i-int(cx[8]*dt)][0-int(cy[8]*dt)][k-int(cz[8]*dt)][8];
-			f[i][Ny][k][12]=f_post[i-int(cx[12]*dt)][0-int(cy[12]*dt)][k-int(cz[12]*dt)][12];
+			//f[i][Ny][k][12]=f_post[i-int(cx[12]*dt)][0-int(cy[12]*dt)][k-int(cz[12]*dt)][12];
 			//f[i][Ny][k][13]=f_post[i-int(cx[13]*dt)][0-int(cy[13]*dt)][k-int(cz[13]*dt)][13];
 			//f[i][Ny][k][18]=f_post[i-int(cx[18]*dt)][0-int(cy[18]*dt)][k-int(cz[18]*dt)][18];
-			
+		
 			
 		}
 	}
 }
 
-
-void BBOS2(){
-	int i,j,k;
-	for (i=0;i<=Nx;i++) for(k=0;k<=Nz;k++){
-		//plano izquierdo
-		f[0][j][k][2] = f_post[0][j][k][1];
-		f[0][j][k][8] = f_post[0][j][k][7];
-		f[0][j][k][10] = f_post[0][j][k][9];
-		f[0][j][k][14] = f_post[0][j][k][13];
-		f[0][j][k][16] = f_post[0][j][k][15];
-		//plano derecho
-		f[Nx][j][k][1] = f_post[Nx][j][k][2];
-		f[Nx][j][k][7] = f_post[Nx][j][k][8];
-		f[Nx][j][k][10] = f_post[Nx][j][k][9];
-		f[Nx][j][k][13] = f_post[Nx][j][k][14];
-		f[Nx][j][k][15] = f_post[Nx][j][k][16];
-		}
-	for(i=0;i<=Nx;i++) for(j=0;j<=Ny;j++){
-		//plano trasero
-		f[i][j][0][6] = f_post[i][j][0][5];
-		f[i][j][0][10] = f_post[i][j][0][9];
-		f[i][j][0][12] = f_post[i][j][0][11];
-		f[i][j][0][15] = f_post[i][j][0][16];
-		f[i][j][0][17] = f_post[i][j][0][18];
-	
-		//plano delantero
-		f[i][j][Nz][5] = f_post[i][j][Nz][6];
-		f[i][j][Nz][9] = f_post[i][j][Nz][10];
-		f[i][j][Nz][11] = f_post[i][j][Nz][12];
-		f[i][j][Nz][16] = f_post[i][j][Nz][15];
-		f[i][j][Nz][18] = f_post[i][j][Nz][17]; 
-		//Falta imponer condiciones de frontera
-	}/*
-	for(i=0;i<=Nx;i++) for(k=0;k<=Nz;k++){
-		//plano abajo
-		f[i][0][k][3]=f_post[i-int(cx[3]*dt)][Ny-int(cy[3]*dt)][k-int(cz[3]*dt)][3];
-		f[i][0][k][7]=f_post[i-int(cx[7]*dt)][Ny-int(cy[7]*dt)][k-int(cz[7]*dt)][7];
-		f[i][0][k][11]=f_post[i-int(cx[11]*dt)][Ny-int(cy[11]*dt)][k-int(cz[11]*dt)][11];
-		f[i][0][k][14]=f_post[i-int(cx[14]*dt)][Ny-int(cy[14]*dt)][k-int(cz[14]*dt)][14];
-		f[i][0][k][17]=f_post[i-int(cx[17]*dt)][Ny-int(cy[17]*dt)][k-int(cz[17]*dt)][17];
-		//plano arriba
-		f[i][Ny][k][3]=f_post[i-int(cx[3]*dt)][-int(cx[3]*dt)][k-int(cz[3]*dt)][3];
-		f[i][Ny][k][7]=f_post[i-int(cx[7]*dt)][-int(cx[7]*dt)][k-int(cz[7]*dt)][7];
-		f[i][Ny][k][11]=f_post[i-int(cx[11]*dt)][-int(cx[11]*dt)][k-int(cz[11]*dt)][11];
-		f[i][Ny][k][14]=f_post[i-int(cx[14]*dt)][-int(cx[14]*dt)][k-int(cz[14]*dt)][14];
-		f[i][Ny][k][17]=f_post[i-int(cx[17]*dt)][-int(cx[17]*dt)][k-int(cz[17]*dt)][17];
-
-	}*/
-	//	}
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//Calculo de las variables macroscopicas
 void Den_Vel()
 {
 	int j, i, k;
@@ -321,9 +251,10 @@ void Den_Vel()
 
 
 
-void Data_Output() // Datos de salida
+void Data_Output() 
 {
-	int i,j,k;
+	int i,j,k,z;
+	z = 5;
 	FILE *fp;
 	fp=fopen("x.dat","w+");
 	for(i=0;i<=Nx;i++) fprintf(fp,"%e \n", float(i)/L);
@@ -333,31 +264,21 @@ void Data_Output() // Datos de salida
 	fclose(fp);
 	fp=fopen("vx.dat","w");
 	for(i=0;i<=Nx;i++) {
-	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",ux[i][j][0]);
+	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",ux[i][j][z]);
 	fprintf(fp,"\n");
 	}
 	fclose(fp);
 	
 	fp=fopen("vy.dat","w");
 	for(i=0;i<=Nx;i++){
-	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",uy[i][j][0]);
+	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",uy[i][j][z]);
 	fprintf(fp,"\n");
 	}
 	fclose(fp);
 
-	fp=fopen("prueba.dat","w");
-	for(i=0;i<=Nx;i++){	
-	for(j=0; j<=Ny; j++){fprintf(fp,"\n");
-	for(k=0; k<=Nz;k++) fprintf(fp,"%e ",uy[i][j][k]);
-	fprintf(fp,"\n");
-	}
-	fprintf(fp,"\n");}
-	fclose(fp);
-
-	
 	fp=fopen("rho.dat","w");
 	for(i=0;i<=Nx;i++){
-	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",rho[j][i][0]);
+	for (j=0; j<=Ny; j++) fprintf(fp,"%e ",rho[j][i][z]);
 	fprintf(fp,"\n");
 	}
 	fclose(fp);
