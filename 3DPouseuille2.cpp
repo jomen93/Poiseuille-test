@@ -19,14 +19,15 @@
 
 
 int cx[Q] = {0, 1,-1, 0, 0, 0, 0, 1,-1, 1,-1, 0, 0, 1,-1, 1,-1, 0, 0};
-int cy[Q] = {0, 0, 0, 1,-1, 0, 0, 1,-1, 1, 0, 1,-1,-1, 1, 0, 0, 1,-1};
-int cz[Q] = {0, 0, 0, 0, 0, 1,-1, 0, 0, 1,-1, 1,-1, 1, 0,-1, 1,-1, 1};
+int cy[Q] = {0, 0, 0, 1,-1, 0, 0, 1,-1, 0, 0, 1,-1,-1, 1, 0, 0, 1,-1};
+int cz[Q] = {0, 0, 0, 0, 0, 1,-1, 0, 0, 1,-1, 1,-1, 0, 0,-1, 1,-1, 1};
 //			 0  1  2  3. 4. 5. 6. 7. 8. 9. 10 11 12 13 14 15 16 17 18
 
 
 
 bool EsFrontera[Nx1][Ny1][Nz1];
-bool EsFronteraPeriodica[Nx1][Ny1][Nz1];
+bool Inlet[Nx1][Ny1][Nz1];
+bool Outlet[Nx1][Ny1][Nz1];
 double Fx, Fy, Fz;
 double f[Nx1][Ny1][Nz1][Q]; 
 double f_post[Nx1][Ny1][Nz1][Q]; 
@@ -60,12 +61,12 @@ int main()
 	n=0;
 	tau=0.9;
 	Init_Eq();
-	while(n <=100)
+	while(n <=500)
 	{
 		n++;
 		Coll_BGK(); 
 		Streaming(); 
-		BBOS();
+		//BBOS();
 		Den_Vel(); 
 		printf("rho=%e ux_c=%e uy_c=%e uz_c=%e k=%d\n",rho[M2][N2][O2],ux[M2][N2][O2],uy[M2][N2][O2],uz[M2][N2][O2], n); 	
 	}
@@ -85,10 +86,10 @@ void Init_Eq()
 		uz[i][j][k] = uz0;
 		EsFrontera[i][j][k] = false;
 		EsFrontera[0][j][k] = true;
-		EsFrontera[i][0][k] = true;
+		Outlet[i][0][k] = true;
 		EsFrontera[i][j][0] = true;
 		EsFrontera[Nx][j][k] = true;
-		EsFrontera[i][Ny][k] = true;
+		Inlet[i][Ny][k] = true;
 		EsFrontera[i][j][Nz] = true;
 		for(q=0;q<Q;q++)
 		f[i][j][k][q]=feq(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q);
@@ -141,76 +142,29 @@ void Streaming()
 }
 
 void BBOS(){
-	int i,j,k;
+	int i,j,k,q;
 	for (i=0;i<=Nx;i++) for(j=0;j<=Ny;j++) for(k=0;k<=Nz;k++){ 
+		
 		if(EsFrontera[i][j][k]==true){
-			f[i][j][k][1]=f_post[i][j][k][2];
-			f[i][j][k][2]=f_post[i][j][k][1];
-			f[i][j][k][3]=f_post[i][j][k][4];
-			f[i][j][k][4]=f_post[i][j][k][3];
-			f[i][j][k][5]=f_post[i][j][k][6];
-			f[i][j][k][6]=f_post[i][j][k][5];
-			f[i][j][k][7]=f_post[i][j][k][8];
-			f[i][j][k][8]=f_post[i][j][k][7];
-			f[i][j][k][9]=f_post[i][j][k][10];
-			f[i][j][k][10]=f_post[i][j][k][9];
-			f[i][j][k][11]=f_post[i][j][k][12];
-			f[i][j][k][12]=f_post[i][j][k][11];
-			f[i][j][k][13]=f_post[i][j][k][14];
-			f[i][j][k][14]=f_post[i][j][k][13];
-			f[i][j][k][15]=f_post[i][j][k][16];
-			f[i][j][k][16]=f_post[i][j][k][15];
-			f[i][j][k][17]=f_post[i][j][k][18];
-			f[i][j][k][18]=f_post[i][j][k][17];
-			/*
-			//plano derecho
-			f[i][j][k][1]=f_post[i][j][k][2];
-			f[i][j][k][7]=f_post[i][j][k][8];
-			f[i][j][k][9]=f_post[i][j][k][10];
-			f[i][j][k][13]=f_post[i][j][k][14];
-			f[i][j][k][15]=f_post[i][j][k][16]; // Hasta acá va bien 
-			
-			//plano izquierdo
-			f[i][j][k][2]=f_post[i][j][k][1]; // si activo esto se dana un poco
-			f[i][j][k][8]=f_post[i][j][k][7];
-			f[i][j][k][10]=f_post[i][j][k][9];
-			f[i][j][k][14]=f_post[i][j][k][13];
-			f[i][j][k][16]=f_post[i][j][k][15];
-
-			//plano atras
-			f[i][j][k][6]=f_post[i][j][k][5]; // lo dana in poco mas
-			f[i][j][k][10]=f_post[i][j][k][9];
-			f[i][j][k][12]=f_post[i][j][k][11];
-			f[i][j][k][15]=f_post[i][j][k][16];
-			f[i][j][k][17]=f_post[i][j][k][18];
-			
-			//plano adelante
-			f[i][j][k][5]=f_post[i][j][k][6];
-			f[i][j][k][9]=f_post[i][j][k][10];
-			f[i][j][k][11]=f_post[i][j][k][12];
-			f[i][j][k][16]=f_post[i][j][k][15];
-			f[i][j][k][18]=f_post[i][j][k][17];
-			*/
-			
+			for (int q = 1; q < Q; q++)
+				f[i][j][k][q]=f_post[i][j][k][int(q+pow(-1,q))];
 		
-		//if(EsFronteraPeriodica[i][j][k] == true && j == 0)
+		if(Inlet[i][j][k] == true)
+			//plano arriba 
+			f[i][j][k][3]=f_post[i-int(cx[3]*dt)][0-int(cy[3]*dt)][k-int(cz[3]*dt)][3];
+			f[i][j][k][7]=f_post[i-int(cx[7]*dt)][0-int(cy[3]*dt)][k-int(cz[7]*dt)][7];
+			f[i][j][k][11]=f_post[i-int(cx[11]*dt)][0-int(cy[3]*dt)][k-int(cz[11]*dt)][11];
+			f[i][j][k][14]=f_post[i-int(cx[14]*dt)][0-int(cy[3]*dt)][k-int(cz[14]*dt)][14];
+			f[i][j][k][17]=f_post[i-int(cx[17]*dt)][0-int(cy[3]*dt)][k-int(cz[17]*dt)][17];
+		
+		if (Outlet[i][j][k] == true)
 			//plano abajo
-
-			//f[i][j][k][3]=f_post[i-cx[3]*dt][i-j+Ny-cy[3]*dt][k-k-cz[3]*dt][3];
-			//f[i][j][k][7]=f_post[i-cx[7]*dt][i-Ny-cy[7]*dt][k-k-cz[7]*dt][7];
-			//f[i][j][k][11]=f_post[i-cx[11]*dt][i-Ny-cy[11]*dt][k-k-cz[11]*dt][11];
-			//f[i][j][k][14]=f_post[i-cx[14]*dt][i-Ny-cy[14]*dt][k-k-cz[14]*dt][14];
-			//f[i][j][k][17]=f_post[i-cx[17]*dt][i-Ny-cy[17]*dt][k-k-cz[17]*dt][17];
-
-			//plano arriba
-
-			//f[i][Ny][k][4]=f_post[i-int(cx[4]*dt)][0-int(cy[4]*dt)][k-int(cz[4]*dt)][4];
-			//f[i][Ny][k][8]=f_post[i-int(cx[8]*dt)][0-int(cy[8]*dt)][k-int(cz[8]*dt)][8];
-			//f[i][Ny][k][12]=f_post[i-int(cx[12]*dt)][0-int(cy[12]*dt)][k-int(cz[12]*dt)][12];
-			//f[i][Ny][k][13]=f_post[i-int(cx[13]*dt)][0-int(cy[13]*dt)][k-int(cz[13]*dt)][13];
-			//f[i][Ny][k][18]=f_post[i-int(cx[18]*dt)][0-int(cy[18]*dt)][k-int(cz[18]*dt)][18];
+			f[i][j][k][3]=f_post[i-int(cx[3]*dt)][Ny-int(cy[3]*dt)][k-int(cz[3]*dt)][3];
+			f[i][j][k][7]=f_post[i-int(cx[7]*dt)][Ny-int(cy[7]*dt)][k-int(cz[7]*dt)][7];
+			f[i][j][k][11]=f_post[i-int(cx[11]*dt)][Ny-int(cy[11]*dt)][k-int(cz[11]*dt)][11];
+			f[i][j][k][14]=f_post[i-int(cx[14]*dt)][Ny-int(cy[14]*dt)][k-int(cz[14]*dt)][14];
+			f[i][j][k][17]=f_post[i-int(cx[17]*dt)][Ny-int(cy[17]*dt)][k-int(cz[17]*dt)][17];
 		
-			
 		}
 	}
 }
@@ -230,9 +184,8 @@ void Den_Vel()
 		f[i][j][k][9]+f[i][j][k][10]+f[i][j][k][11]+f[i][j][k][12]+f[i][j][k][13]+
 		f[i][j][k][14]+f[i][j][k][15]+f[i][j][k][16]+f[i][j][k][17]+f[i][j][k][18];
 		
-		ux[i][j][k] = (f[i][j][k][1] + f[i][j][k][7] + f[i][j][k][9]
-			+ f[i][j][k][13] + f[i][j][k][15] - f[i][j][k][2] -f[i][j][k][8]
-			-f[i][j][k][10] - f[i][j][k][14] - f[i][j][k][16])/rho[i][j][k];
+		ux[i][j][k] = (f[i][j][k][1]+f[i][j][k][7]+f[i][j][k][9]+f[i][j][k][13]+f[i][j][k][15]
+			-f[i][j][k][2]-f[i][j][k][8]-f[i][j][k][10]-f[i][j][k][14]-f[i][j][k][16])/rho[i][j][k];
 
 		uy[i][j][k] = (f[i][j][k][3] + f[i][j][k][7] + f[i][j][k][11] + 
 			f[i][j][k][14] + f[i][j][k][17] - f[i][j][k][4] - f[i][j][k][8]
@@ -254,7 +207,7 @@ void Den_Vel()
 void Data_Output() 
 {
 	int i,j,k,z;
-	z = 5;
+	z = 0;
 	FILE *fp;
 	fp=fopen("x.dat","w+");
 	for(i=0;i<=Nx;i++) fprintf(fp,"%e \n", float(i)/L);
