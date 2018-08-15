@@ -1,16 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#define Nx 128 
-#define Ny 128 
-#define Nz 10 
+#define Nx 64 
+#define Ny 64
+#define Nz 16
 #define Nx1 (Nx+1)
 #define Ny1 (Ny+1)
 #define Nz1 (Nz+1)
 #define L (Ny+1)
 #define Q 19 		
 #define rho0 1.0  
-#define ux0 0.0 
+#define ux0 0.0
 #define uy0 0.0   
 #define uz0 0.0   
 #define g 0.000001 
@@ -61,12 +61,12 @@ int main()
 	n=0;
 	tau=0.9;
 	Init_Eq();
-	while(n <=500)
+	while(n <=1000)
 	{
 		n++;
 		Coll_BGK(); 
 		Streaming(); 
-		//BBOS();
+		BBOS();
 		Den_Vel(); 
 		printf("rho=%e ux_c=%e uy_c=%e uz_c=%e k=%d\n",rho[M2][N2][O2],ux[M2][N2][O2],uy[M2][N2][O2],uz[M2][N2][O2], n); 	
 	}
@@ -86,11 +86,12 @@ void Init_Eq()
 		uz[i][j][k] = uz0;
 		EsFrontera[i][j][k] = false;
 		EsFrontera[0][j][k] = true;
-		Outlet[i][0][k] = true;
-		EsFrontera[i][j][0] = true;
 		EsFrontera[Nx][j][k] = true;
-		Inlet[i][Ny][k] = true;
+		EsFrontera[i][j][0] = true;
 		EsFrontera[i][j][Nz] = true;
+		Inlet[i][Ny][k] = true;
+		Outlet[i][0][k] = true;
+		
 		for(q=0;q<Q;q++)
 		f[i][j][k][q]=feq(rho[i][j][k],ux[i][j][k],uy[i][j][k],uz[i][j][k],q);
 	}
@@ -145,29 +146,58 @@ void BBOS(){
 	int i,j,k,q;
 	for (i=0;i<=Nx;i++) for(j=0;j<=Ny;j++) for(k=0;k<=Nz;k++){ 
 		
-		if(EsFrontera[i][j][k]==true){
-			for (int q = 1; q < Q; q++)
-				f[i][j][k][q]=f_post[i][j][k][int(q+pow(-1,q))];
-		
-		if(Inlet[i][j][k] == true)
+		if(Inlet[i][j][k] == true){
 			//plano arriba 
-			f[i][j][k][3]=f_post[i-int(cx[3]*dt)][0-int(cy[3]*dt)][k-int(cz[3]*dt)][3];
-			f[i][j][k][7]=f_post[i-int(cx[7]*dt)][0-int(cy[3]*dt)][k-int(cz[7]*dt)][7];
-			f[i][j][k][11]=f_post[i-int(cx[11]*dt)][0-int(cy[3]*dt)][k-int(cz[11]*dt)][11];
-			f[i][j][k][14]=f_post[i-int(cx[14]*dt)][0-int(cy[3]*dt)][k-int(cz[14]*dt)][14];
-			f[i][j][k][17]=f_post[i-int(cx[17]*dt)][0-int(cy[3]*dt)][k-int(cz[17]*dt)][17];
-		
-		if (Outlet[i][j][k] == true)
+			f[i][j][k][4]=f_post[i-cx[4]*dt][0][k-cz[4]*dt][4];
+			f[i][j][k][8]=f_post[i-cx[8]*dt][0][k-cz[8]*dt][8];
+			f[i][j][k][12]=f_post[i-cx[12]*dt][0][k-cz[12]*dt][12];
+			f[i][j][k][13]=f_post[i-cx[13]*dt][0][k-cz[13]*dt][13];
+			f[i][j][k][18]=f_post[i-cx[18]*dt][0][k-cz[18]*dt][18];
+		}
+
+		if (Outlet[i][j][k] == true){
 			//plano abajo
-			f[i][j][k][3]=f_post[i-int(cx[3]*dt)][Ny-int(cy[3]*dt)][k-int(cz[3]*dt)][3];
-			f[i][j][k][7]=f_post[i-int(cx[7]*dt)][Ny-int(cy[7]*dt)][k-int(cz[7]*dt)][7];
-			f[i][j][k][11]=f_post[i-int(cx[11]*dt)][Ny-int(cy[11]*dt)][k-int(cz[11]*dt)][11];
-			f[i][j][k][14]=f_post[i-int(cx[14]*dt)][Ny-int(cy[14]*dt)][k-int(cz[14]*dt)][14];
-			f[i][j][k][17]=f_post[i-int(cx[17]*dt)][Ny-int(cy[17]*dt)][k-int(cz[17]*dt)][17];
+			f[i][j][k][3]=f_post[i-cx[3]*dt][Ny][k-cz[3]*dt][3];
+			f[i][j][k][7]=f_post[i-cx[7]*dt][Ny][k-cz[7]*dt][7];
+			f[i][j][k][11]=f_post[i-cx[11]*dt][Ny][k-cz[11]*dt][11];
+			f[i][j][k][14]=f_post[i-cx[14]*dt][Ny][k-cz[14]*dt][14];
+			f[i][j][k][17]=f_post[i-cx[17]*dt][Ny][k-cz[17]*dt][17];
+			}
 		
+		if(EsFrontera[i][j][k]==true){
+			//for (int q = 1; q < Q; q++)
+				//f[i][j][k][q]=f_post[i][j][k][int(q+pow(-1,q))];
+				
+				f[i][j][k][1]=f_post[i][j][k][2];
+				f[i][j][k][2]=f_post[i][j][k][1];
+				f[i][j][k][3]=f_post[i][j][k][4];
+				f[i][j][k][4]=f_post[i][j][k][3];
+				f[i][j][k][5]=f_post[i][j][k][6];
+				f[i][j][k][6]=f_post[i][j][k][5];
+				f[i][j][k][7]=f_post[i][j][k][8];
+				f[i][j][k][8]=f_post[i][j][k][7];
+				f[i][j][k][9]=f_post[i][j][k][10];
+				f[i][j][k][10]=f_post[i][j][k][9];
+				f[i][j][k][11]=f_post[i][j][k][12];
+				f[i][j][k][12]=f_post[i][j][k][11];
+				f[i][j][k][13]=f_post[i][j][k][14];
+				f[i][j][k][14]=f_post[i][j][k][13];
+				f[i][j][k][15]=f_post[i][j][k][16];
+				f[i][j][k][16]=f_post[i][j][k][15];
+				f[i][j][k][17]=f_post[i][j][k][18];
+				f[i][j][k][18]=f_post[i][j][k][17];
+				
+				
 		}
 	}
-}
+		
+		
+		
+		
+	
+		
+	}
+
 
 void Den_Vel()
 {
@@ -207,7 +237,7 @@ void Den_Vel()
 void Data_Output() 
 {
 	int i,j,k,z;
-	z = 0;
+	z = 1;
 	FILE *fp;
 	fp=fopen("x.dat","w+");
 	for(i=0;i<=Nx;i++) fprintf(fp,"%e \n", float(i)/L);
