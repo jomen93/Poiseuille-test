@@ -41,15 +41,16 @@ double Fi(double RHO, double U, double V, int k); // funcion para agregar el for
 
 //=========================================================
 //=========================================================
-int main()
+int main(int argc, char* argv[])
 {
-	int k,M2,N2;
+	int k,kf,M2,N2;
 	double err;
 	M2=Ny/2; N2=Nx/2;
 	k=0;
-	tau=0.9;// Tiempo de relajacion para BGK
+	kf = atoi(argv[1]);
+	tau=0.8;// Tiempo de relajacion para BGK
 	Init_Eq();
-	while(k <=100)
+	while(k <=kf)
 	{
 		k++;
 		Coll_BGK(); //BGK colision
