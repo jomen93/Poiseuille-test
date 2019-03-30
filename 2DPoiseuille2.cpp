@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <cstring>
+
 #define Nx 256 // Numero de cuadro en la direccion x
 #define Ny 256 // Numero de cuadro en la direccion y
 #define Nx1 (Nx+1)
@@ -36,9 +38,14 @@ void Den_Vel(void); // Variables macroscopicas
 void BBOS(void);
 double Err(void); // Funcion del error para parar el ciclo 
 double u0[Ny1][Nx1],v0[Ny1][Nx1]; // definicion de matrices de condiciones iniciales
-void Data_Output(void); // Funcion que escribe los datos
+void Data_Output(); // Funcion que escribe los datos
 double Fi(double RHO, double U, double V, int k); // funcion para agregar el forzamiento 
 
+char xdat[2] ="x";
+char ydat[2] ="y";
+char udat[2] ="u";
+char vdat[2] ="v";
+char rhodat[4] ="rho";
 //=========================================================
 //=========================================================
 int main(int argc, char* argv[])
@@ -48,16 +55,16 @@ int main(int argc, char* argv[])
 	M2=Ny/2; N2=Nx/2;
 	k=0;
 	kf = atoi(argv[1]);
-	tau=0.8;// Tiempo de relajacion para BGK
+	tau=0.63;// Tiempo de relajacion para BGK
 	Init_Eq();
-	while(k <=kf)
+	while(k <= kf)
 	{
 		k++;
 		Coll_BGK(); //BGK colision
 		Streaming(); // Streaming (Transmision)
 		BBOS();
 		Den_Vel(); // Variables macroscopicas de fluido 
-		printf("rho=%e ux_center=%e uy_center=%e k=%d\n",rho[M2][N2],ux[M2][N2],uy[M2][N2], k); 	
+		//printf("rho=%e ux_center=%e uy_center=%e k=%d\n",rho[M2][N2],ux[M2][N2],uy[M2][N2], k); 	
 	}
 	Data_Output(); //Escribir los pasos cuando acabe la iteracion
 }
@@ -186,27 +193,27 @@ void Data_Output() // Datos de salida
 {
 	int i,j;
 	FILE *fp;
-	fp=fopen("x.dat","w+");
+	fp=fopen(xdat,"w+");
 	for(i=0;i<=Nx;i++) fprintf(fp,"%e \n", float(i)/L);
 	fclose(fp);
-	fp=fopen("y.dat","w+");
+	fp=fopen(ydat,"w+");
 	for(j=0;j<=Ny;j++) fprintf(fp,"%e \n", float(j)/L);
 	fclose(fp);
-	fp=fopen("vx.dat","w");
+	fp=fopen(udat,"w");
 	for(j=0;j<=Ny;j++) {
 	for (i=0; i<=Nx; i++) fprintf(fp,"%e ",ux[j][i]);
 	fprintf(fp,"\n");
 	}
 	fclose(fp);
 	
-	fp=fopen("vy.dat","w");
+	fp=fopen(vdat,"w");
 	for(j=0;j<=Ny;j++){
 	for (i=0; i<=Nx; i++) fprintf(fp,"%e ",uy[j][i]);
 	fprintf(fp,"\n");
 	}
 	fclose(fp);
 	
-	fp=fopen("rho.dat","w");
+	fp=fopen(rhodat,"w");
 	for(j=0;j<=Ny;j++){
 	for (i=0; i<=Nx; i++) fprintf(fp,"%e ",rho[j][i]);
 	fprintf(fp,"\n");
