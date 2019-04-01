@@ -12,11 +12,12 @@
 #define rho0 1.0  // Densidad Inicial
 #define ux0 0.0 // Velocidad inicial en la componente x
 #define uy0 0.0   // Velocidad inicial en la componente y 
-#define g 0.000001 // verificar para conservar compresibilidad !!!
+#define g 4.06901041667e-7 // verificar para conservar compresibilidad !!!
 #define dt 1
 
 int cx[Q]={0, 1, 0, -1, 0, 1, -1, -1, 1};
 int cy[Q]={0, 0, 1, 0, -1, 1, 1, -1, -1};
+double co2 = 0.333333333333;
 
 bool Esfrontera[Ny1][Nx1];
 bool EsfronteraPeriodica[Ny1][Nx1];
@@ -55,7 +56,7 @@ int main(int argc, char* argv[])
 	M2=Ny/2; N2=Nx/2;
 	k=0;
 	kf = atoi(argv[1]);
-	tau=0.63;// Tiempo de relajacion para BGK
+	tau=0.6;// Tiempo de relajacion para BGK
 	Init_Eq();
 	while(k <= kf)
 	{
@@ -64,7 +65,8 @@ int main(int argc, char* argv[])
 		Streaming(); // Streaming (Transmision)
 		BBOS();
 		Den_Vel(); // Variables macroscopicas de fluido 
-		//printf("rho=%e ux_center=%e uy_center=%e k=%d\n",rho[M2][N2],ux[M2][N2],uy[M2][N2], k); 	
+		//printf("rho=%e ux_center=%e uy_center=%e k=%d\n",rho[M2][N2],ux[M2][N2],uy[M2][N2], k); 
+		printf("uy_center=%e k=%d\n",uy[M2][N2], k); 
 	}
 	Data_Output(); //Escribir los pasos cuando acabe la iteracion
 }
